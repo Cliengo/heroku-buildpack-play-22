@@ -107,7 +107,7 @@ install_play()
   PLAY_URL="https://github.com/playframework/play1/releases/download/$VER_TO_INSTALL/play-$VER_TO_INSTALL.zip"
   PLAY_TAR_FILE="play-heroku.zip"
 
-  validate_play_version ${VER_TO_INSTALL}
+  #validate_play_version ${VER_TO_INSTALL}
 
   echo "-----> Installing Play! $VER_TO_INSTALL....."
 
