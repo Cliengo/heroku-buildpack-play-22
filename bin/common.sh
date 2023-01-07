@@ -122,11 +122,13 @@ install_play()
     echo "-----> Error downloading Play! framework. Please try again..."
     exit 1
   fi
-  if [ -z "`file $PLAY_TAR_FILE | grep gzip`" ]; then
-    error "Failed to install Play! framework or unsupported Play! framework version specified.
-Please review Dev Center for a list of supported versions."
-    exit 1
-  fi
+  
+#  if [ -z "`file $PLAY_TAR_FILE | grep gzip`" ]; then
+#    error "Failed to install Play! framework or unsupported Play! framework version specified.
+#Please review Dev Center for a list of supported versions."
+#    exit 1
+#  fi
+
   tar xzmf $PLAY_TAR_FILE
   rm $PLAY_TAR_FILE
   chmod +x $PLAY_PATH/play
