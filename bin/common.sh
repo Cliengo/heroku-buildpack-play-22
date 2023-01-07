@@ -104,8 +104,8 @@ https://devcenter.heroku.com/articles/scala-support"
 install_play()
 {
   VER_TO_INSTALL=$1
-  PLAY_URL="https://s3.amazonaws.com/heroku-jvm-langpack-play/play-heroku-$VER_TO_INSTALL.tar.gz"
-  PLAY_TAR_FILE="play-heroku.tar.gz"
+  PLAY_URL="https://github.com/playframework/play1/releases/download/$VER_TO_INSTALL/play-$VER_TO_INSTALL.zip"
+  PLAY_TAR_FILE="play-heroku.zip"
 
   validate_play_version ${VER_TO_INSTALL}
 
