@@ -129,7 +129,7 @@ install_play()
 #    exit 1
 #  fi
 
-  tar xzmf $PLAY_TAR_FILE
+  unzip $PLAY_TAR_FILE
   rm $PLAY_TAR_FILE
   chmod +x $PLAY_PATH/play
   echo "Done installing Play!" | indent
