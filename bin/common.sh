@@ -38,7 +38,9 @@ download_play_official() {
   local playVersion=${1}
   local playTarFile=${2}
   local playZipFile="play-${playVersion}.zip"
-  local playUrl="https://downloads.typesafe.com/play/${playVersion}/${playZipFile}"
+  local playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
+
+  https://github.com/playframework/play1/releases/download/
 
   status=$(curl --retry 3 --silent --head -w %{http_code} -L ${playUrl} -o /dev/null)
   if [ "$status" != "200" ]; then
@@ -104,10 +106,10 @@ https://devcenter.heroku.com/articles/scala-support"
 install_play()
 {
   VER_TO_INSTALL=$1
-  PLAY_URL="https://github.com/playframework/play1/releases/download/$VER_TO_INSTALL/play-$VER_TO_INSTALL.zip"
-  PLAY_TAR_FILE="play-heroku.zip"
+  PLAY_URL="https://s3.amazonaws.com/heroku-jvm-langpack-play/play-heroku-$VER_TO_INSTALL.tar.gz"
+  PLAY_TAR_FILE="play-heroku.tar.gz"
 
-  #validate_play_version ${VER_TO_INSTALL}
+  validate_play_version ${VER_TO_INSTALL}
 
   echo "-----> Installing Play! $VER_TO_INSTALL....."
 
@@ -122,14 +124,12 @@ install_play()
     echo "-----> Error downloading Play! framework. Please try again..."
     exit 1
   fi
-  
-#  if [ -z "`file $PLAY_TAR_FILE | grep gzip`" ]; then
-#    error "Failed to install Play! framework or unsupported Play! framework version specified.
-#Please review Dev Center for a list of supported versions."
-#    exit 1
-#  fi
-
-  unzip $PLAY_TAR_FILE
+  if [ -z "`file $PLAY_TAR_FILE | grep gzip`" ]; then
+    error "Failed to install Play! framework or unsupported Play! framework version specified.
+Please review Dev Center for a list of supported versions."
+    exit 1
+  fi
+  tar xzmf $PLAY_TAR_FILE
   rm $PLAY_TAR_FILE
   chmod +x $PLAY_PATH/play
   echo "Done installing Play!" | indent
