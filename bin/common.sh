@@ -38,11 +38,7 @@ download_play_official() {
   local playVersion=${1}
   local playTarFile=${2}
   local playZipFile="play-${playVersion}.zip"
-  local playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
-
-  if [ playVersion < "1.6.0" ]; then
-    playUrl="https://downloads.typesafe.com/play/${playVersion}/${playZipFile}"
-  fi
+  local playUrl="https://downloads.typesafe.com/play/${playVersion}/${playZipFile}"
 
   status=$(curl --retry 3 --silent --head -w %{http_code} -L ${playUrl} -o /dev/null)
   if [ "$status" != "200" ]; then
