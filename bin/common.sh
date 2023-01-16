@@ -39,13 +39,6 @@ download_play_official() {
   local playTarFile=${2}
   local playZipFile="play-${playVersion}.zip"
   local playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
-  
- 
-  echo playVersion
-  echo ("$playVersion" < "1.6.0")
-  echo playVersion < "1.6.0"
-  echo playVersion > "1.6.0"
-  
 
   if [ playVersion < "1.6.0" ]; then
     playUrl="https://downloads.typesafe.com/play/${playVersion}/${playZipFile}"
