@@ -2,6 +2,7 @@
 # bin/compile <build-dir> <cache-dir> <env-dir>
 
 # Parse args
+PLAY_URL=https://repo1.maven.org/maven2/com/google/code/maven-play-plugin/org/playframework/play/1.4.5/play-1.4.5-framework.zip
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
