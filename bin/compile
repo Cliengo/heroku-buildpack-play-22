@@ -38,7 +38,7 @@ if [ ! -f "$BUILD_DIR/system.properties" ]; then
 fi
 
 echo "-----> Installing OpenJDK..."
-javaVersion="1.8.0_442"
+javaVersion="1.8"
 install_openjdk "$javaVersion" "$BUILD_DIR" "$BIN_DIR"
 echo "       Done installing OpenJDK"
 
