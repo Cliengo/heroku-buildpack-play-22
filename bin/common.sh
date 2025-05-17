@@ -48,9 +48,16 @@ download_play_official() {
   curl --retry 3 -s -O -L ${playUrl}
 
   # create tar file
-  echo "Preparing binary package..." | indent
+  echo "Preparing binary package..." 
   local playUnzipDir="tmp-play-unzipped/"
   mkdir -p ${playUnzipDir}
+  
+  echo "Zip file: $playZipFile"
+  if [ ! -f "$playZipFile" ]; then
+    echo "Error: Zip file not found."
+    exit 1
+  fi
+  
   unzip ${playZipFile} -d ${playUnzipDir} > /dev/null 2>&1
 
   PLAY_BUILD_DIR=$(find -name 'framework' -type d | sed 's/framework//')
