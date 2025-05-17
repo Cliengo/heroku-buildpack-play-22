@@ -86,8 +86,9 @@ download_play_official() {
     mkdir build
   fi
 
-  tar cvzf ${playTarFile} -C tmp/ .play > /dev/null 2>&1
+  #tar cvzf ${playTarFile} -C tmp/ .play > /dev/null 2>&1
   rm -fr tmp/
+  chmod +x $PLAY_PATH/play
 }
 
 validate_play_version() {
