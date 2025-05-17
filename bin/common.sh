@@ -134,7 +134,7 @@ install_openjdk() {
 
   # For demo: download Azul Zulu JDK 8 Linux x64 tar.gz
   if [[ "$java_version" == "1.8" || "$java_version" == "8" ]]; then
-    JDK_URL="https://cdn.azul.com/zulu/bin/zulu8.62.0.19-ca-jdk8.0.352-linux_x64.tar.gz"
+    JDK_URL="https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251398_0d8f12bc927a4e2c9f8568ca567db4ee"
   else
     echo "Unsupported Java version $java_version"
     exit 1
