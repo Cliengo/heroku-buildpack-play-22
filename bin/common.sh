@@ -67,7 +67,7 @@ download_play_official() {
   # Copiar todo directo a .play (no a tmp/.play)
   cp -r "$PLAY_BUILD_DIR/framework/dependencies.yml" .play/framework
   cp -r "$PLAY_BUILD_DIR/framework/lib/" .play/framework
-  cp -r "$PLAY_BUILD_DIR/framework/play-*.jar" .play/framework
+  cp "$PLAY_BUILD_DIR/framework/play-1.4.5.jar" .play/framework
   cp -r "$PLAY_BUILD_DIR/framework/pym/" .play/framework
   cp -r "$PLAY_BUILD_DIR/framework/src/play/version" .play/framework/src/play
   cp -r "$PLAY_BUILD_DIR/framework/templates/" .play/framework
