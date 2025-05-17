@@ -10,23 +10,33 @@ BIN_DIR=$(cd "$(dirname "$0")"; pwd)
 . "$BIN_DIR/common.sh"
 
 # --- Install portable Python 2 ---
-PYTHON2_URL="https://github.com/sganis/pyportable/releases/download/v2.7.10rc1/pyportable-2.7.10rc1.zip"
-PYTHON2_ZIP="pyportable.zip"
+PYTHON2_VERSION="2.7.18"
 PYTHON2_DIR=".python2"
+PYTHON2_BUILD_DIR="Python-${PYTHON2_VERSION}"
 
-echo "-----> Downloading portable Python 2.7..."
-curl -L -o $PYTHON2_ZIP $PYTHON2_URL
+if [ ! -d "$BUILD_DIR/$PYTHON2_DIR" ]; then
+  echo "-----> Downloading and compiling Python ${PYTHON2_VERSION}..."
+  curl -L -o python2.tgz "https://www.python.org/ftp/python/${PYTHON2_VERSION}/Python-${PYTHON2_VERSION}.tgz"
 
-echo "-----> Extracting Python 2.7 zip..."
-unzip -q $PYTHON2_ZIP -d $PYTHON2_DIR
-ln -sf python2 "$PYTHON2_DIR/bin/python"
+  tar -xzf python2.tgz
+  rm python2.tgz
 
-rm $PYTHON2_ZIP
+  cd "$BUILD_DIR/$PYTHON2_BUILD_DIR"
 
-echo "-----> Portable Python 2.7 installed at $PYTHON2_DIR"
+  ./configure --prefix="$BUILD_DIR/$PYTHON2_DIR" --enable-shared --enable-unicode=ucs4
+  make -j$(nproc)
+  make install
+
+  cd "$BUILD_DIR"
+  rm -rf "$PYTHON2_BUILD_DIR"
+
+  echo "-----> Python ${PYTHON2_VERSION} compiled and installed at $PYTHON2_DIR"
+else
+  echo "-----> Python ${PYTHON2_VERSION} already installed"
+fi
 
 # Export path so python2 is used during build
-export PATH="$PYTHON2_DIR/bin:$PATH"
+export PATH="$BUILD_DIR/$PYTHON2_DIR/bin:$PATH"
 
 export_env_dir "$ENV_DIR"
 
