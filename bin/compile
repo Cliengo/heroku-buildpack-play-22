@@ -13,12 +13,19 @@ BIN_DIR=$(cd "$(dirname "$0")"; pwd)
 
 
 # --- Install portable Python 2 ---
-PYTHON2_URL="https://github.com/indygreg/python-build-standalone/releases/download/20221002/cpython-2.7.18+20221002-x86_64-unknown-linux-gnu-install_only.tar.gz"
-PYTHON2_DIR="$BUILD_DIR/.python2"
+PYTHON2_URL="https://github.com/sganis/pyportable/releases/download/v2.7.10rc1/pyportable-2.7.10rc1.zip"
+PYTHON2_ZIP="pyportable.zip"
+PYTHON2_DIR=".python2"
 
-echo "-----> Installing portable Python 2.7 ..."
-mkdir -p $PYTHON2_DIR
-curl -sL $PYTHON2_URL | tar -xz --strip-components=1 -C $PYTHON2_DIR
+echo "-----> Downloading portable Python 2.7..."
+curl -L -o $PYTHON2_ZIP $PYTHON2_URL
+
+echo "-----> Extracting Python 2.7 zip..."
+unzip -q $PYTHON2_ZIP -d $PYTHON2_DIR
+
+rm $PYTHON2_ZIP
+
+echo "-----> Portable Python 2.7 installed at $PYTHON2_DIR"
 
 # Export path to use python2 in the build process
 export PATH="$PYTHON2_DIR/bin:$PATH"
