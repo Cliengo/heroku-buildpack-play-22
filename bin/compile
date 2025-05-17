@@ -18,12 +18,17 @@ if [ ! -d "$BUILD_DIR/$PYTHON2_DIR" ]; then
   echo "-----> Downloading and compiling Python ${PYTHON2_VERSION}..."
   curl -L -o python2.tgz "https://www.python.org/ftp/python/${PYTHON2_VERSION}/Python-${PYTHON2_VERSION}.tgz"
 
-  tar -xzf python2.tgz -C "$BUILD_DIR"
+  tar -xzf python2.tgz
   rm python2.tgz
+
+  # Extrae dentro de BUILD_DIR si no se extrajo correctamente
+  if [ ! -d "$BUILD_DIR/$PYTHON2_BUILD_DIR" ] && [ -d "$PYTHON2_BUILD_DIR" ]; then
+    mv "$PYTHON2_BUILD_DIR" "$BUILD_DIR/"
+  fi
 
   cd "$BUILD_DIR/$PYTHON2_BUILD_DIR"
 
-  ./configure --prefix="$BUILD_DIR/$PYTHON2_DIR" --enable-shared --enable-unicode=ucs4
+  ./configure --prefix="$BUILD_DIR/$PYTHON2_DIR" --enable-unicode=ucs4 --enable-shared
   make -j$(nproc)
   make install
 
@@ -35,9 +40,18 @@ else
   echo "-----> Python ${PYTHON2_VERSION} already installed"
 fi
 
-
-# Export path so python2 is used during build
+# Aseguramos que el binario y la lib compartida estén disponibles en build y runtime
 export PATH="$BUILD_DIR/$PYTHON2_DIR/bin:$PATH"
+export LD_LIBRARY_PATH="$BUILD_DIR/$PYTHON2_DIR/lib:$LD_LIBRARY_PATH"
+
+# Runtime profile to export same LD_LIBRARY_PATH
+PY2_PROFILE="$BUILD_DIR/.profile.d/python2.sh"
+mkdir -p "$(dirname "$PY2_PROFILE")"
+cat <<EOF > "$PY2_PROFILE"
+export PATH="/app/.python2/bin:\$PATH"
+export LD_LIBRARY_PATH="/app/.python2/lib:\$LD_LIBRARY_PATH"
+EOF
+
 
 export_env_dir "$ENV_DIR"
 
