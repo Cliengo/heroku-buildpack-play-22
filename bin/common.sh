@@ -83,6 +83,95 @@ validate_play_version() {
   fi
 }
 
+
+export_env_dir() {
+  env_dir=$1
+  whitelist_regex=${2:-''}
+  blacklist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH|JAVA_OPTS)$'}
+  if [ -d "$env_dir" ]; then
+    for e in $(ls "$env_dir"); do
+      echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
+      export "$e=$(cat "$env_dir/$e")"
+      :
+    done
+  fi
+}
+
+get_play_version() {
+  local file=${1?"No file specified"}
+
+  if [ ! -f "$file" ]; then
+    echo ""
+    return 0
+  fi
+
+  # parse dependencies.yml for play version, example line: "- play 1.4.5"
+  grep -P '.*-.*play[ \t]+[0-9\.]+' "$file" | sed -E -e 's/[ \t]*-[ \t]*play[ \t]+([0-9A-Za-z\.]*).*/\1/'
+}
+
+check_compile_status() {
+  # check last two piped commands exit status (assumes usage in eval | sed)
+  local arr=("${PIPESTATUS[@]}")
+  for s in "${arr[@]}"; do
+    if [ "$s" != "0" ]; then
+      echo " !     Failed to build Play! application"
+      exit 1
+    fi
+  done
+}
+
+install_openjdk() {
+  # Simple stub that downloads and unpacks a JDK 1.8 from Azul or adoptopenjdk or similar
+  # You can customize this to match your needs
+  local java_version=$1
+  local build_dir=$2
+  local bin_dir=$3
+
+  echo "Installing OpenJDK version $java_version..."
+
+  JDK_DIR="$build_dir/.jdk"
+  mkdir -p "$JDK_DIR"
+
+  # For demo: download Azul Zulu JDK 8 Linux x64 tar.gz
+  if [[ "$java_version" == "1.8" || "$java_version" == "8" ]]; then
+    JDK_URL="https://cdn.azul.com/zulu/bin/zulu8.62.0.19-ca-jdk8.0.352-linux_x64.tar.gz"
+  else
+    echo "Unsupported Java version $java_version"
+    exit 1
+  fi
+
+  # Download and extract
+  curl -sL "$JDK_URL" | tar xz -C "$JDK_DIR" --strip-components=1
+  echo "OpenJDK installed to $JDK_DIR"
+}
+
+install_play() {
+  local version=$1
+  local play_path=${2:-".play"}
+
+  echo "Installing Play! framework version $version..."
+
+  mkdir -p "$play_path"
+
+  PLAY_ZIP_URL="https://repo1.maven.org/maven2/com/google/code/maven-play-plugin/org/playframework/play/$version/play-$version-framework.zip"
+  PLAY_ZIP="$play_path/play-$version.zip"
+
+  curl -sL "$PLAY_ZIP_URL" -o "$PLAY_ZIP"
+  unzip -q "$PLAY_ZIP" -d "$play_path"
+  rm "$PLAY_ZIP"
+
+  echo "$version" > "$play_path/framework/src/play/version"
+  chmod +x "$play_path/play"
+}
+
+remove_play() {
+  local build_dir=$1
+  local play_version=$2
+
+  rm -rf "${build_dir}/tmp-play-unzipped"
+  rm -f "${build_dir}/play-${play_version}.zip"
+}
+
 install_play() {
   local version=$1
   local tarFile="play-heroku.tar.gz"
