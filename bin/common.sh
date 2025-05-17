@@ -47,49 +47,42 @@ download_play_official() {
 
   curl --retry 3 -s -O -L ${playUrl}
 
-  # create tar file
   echo "Preparing binary package..." 
   local playUnzipDir="tmp-play-unzipped/"
   mkdir -p ${playUnzipDir}
   
   echo "Zip file: $playZipFile"
-  if [ ! -f "play-1.4.5.zip" ]; then
+  if [ ! -f "$playZipFile" ]; then
     echo "Error: Zip file not found."
     exit 1
   fi
   
-  unzip "play-1.4.5.zip" -d ${playUnzipDir} > /dev/null 2>&1
+  unzip "$playZipFile" -d ${playUnzipDir} > /dev/null 2>&1
 
-  PLAY_BUILD_DIR=$(find -name 'framework' -type d | sed 's/framework//')
+  PLAY_BUILD_DIR=$(find ${playUnzipDir} -name 'framework' -type d | sed 's/framework//')
 
-  mkdir -p tmp/.play/framework/src/play
+  # Asegurarse que el directorio destino existe
+  mkdir -p .play/framework/src/play
 
-  # Add Play! framework
-  cp -r $PLAY_BUILD_DIR/framework/dependencies.yml tmp/.play/framework
-  cp -r $PLAY_BUILD_DIR/framework/lib/             tmp/.play/framework
-  cp -r $PLAY_BUILD_DIR/framework/play-*.jar       tmp/.play/framework
-  cp -r $PLAY_BUILD_DIR/framework/pym/             tmp/.play/framework
-  cp -r $PLAY_BUILD_DIR/framework/src/play/version tmp/.play/framework/src/play
-  cp -r $PLAY_BUILD_DIR/framework/templates/       tmp/.play/framework
+  # Copiar todo directo a .play (no a tmp/.play)
+  cp -r "$PLAY_BUILD_DIR/framework/dependencies.yml" .play/framework
+  cp -r "$PLAY_BUILD_DIR/framework/lib/" .play/framework
+  cp -r "$PLAY_BUILD_DIR/framework/play-*.jar" .play/framework
+  cp -r "$PLAY_BUILD_DIR/framework/pym/" .play/framework
+  cp -r "$PLAY_BUILD_DIR/framework/src/play/version" .play/framework/src/play
+  cp -r "$PLAY_BUILD_DIR/framework/templates/" .play/framework
 
-  # Add Play! core modules
-  cp -r $PLAY_BUILD_DIR/modules    tmp/.play
+  cp -r "$PLAY_BUILD_DIR/modules" .play
+  cp -r "$PLAY_BUILD_DIR/play" .play
+  cp -r "$PLAY_BUILD_DIR/resources" .play
 
-  # Add Play! Linux executable
-  cp -r $PLAY_BUILD_DIR/play  tmp/.play
+  # Ya no eliminar tmp/ porque no la usamos más
+  # rm -fr tmp/
 
-  # Add Resources
-  cp -r $PLAY_BUILD_DIR/resources tmp/.play
-
-  # Run tar and remove tmp space
-  if [ ! -d build ]; then
-    mkdir build
-  fi
-
-  #tar cvzf ${playTarFile} -C tmp/ .play > /dev/null 2>&1
-  rm -fr tmp/
-  chmod +x $PLAY_PATH/play
+  # Finalmente dar permisos
+  chmod +x .play/play
 }
+
 
 validate_play_version() {
   local playVersion=${1}
