@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-indent() {
-  while IFS= read -r line; do
-    printf '       %s\n' "$line"
-  done
-}
-
 export_env_dir() {
   env_dir=$1
   whitelist_regex=${2:-''}
