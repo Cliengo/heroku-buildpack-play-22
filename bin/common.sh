@@ -43,7 +43,7 @@ download_play_official() {
     playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
   fi
 
-  status=$(curl --retry 3 --silent --head -w "%{http_code}" -L ${playUrl} -o /dev/null)
+  status=$(curl --retry 3 --silent --head -w %{http_code} -L ${playUrl} -o /dev/null)
   if [ "$status" != "200" ]; then
     error "Could not locate: ${playUrl}
 Please check that the version ${playVersion} is correct in your conf/dependencies.yml"
@@ -163,40 +163,37 @@ install_openjdk() {
   echo "OpenJDK installed to $JDK_DIR"
 }
 
-install_play() {
+install_play()
+{
   VER_TO_INSTALL=$1
   PLAY_URL="https://s3.amazonaws.com/heroku-jvm-langpack-play/play-heroku-$VER_TO_INSTALL.tar.gz"
   PLAY_TAR_FILE="play-heroku.tar.gz"
 
-  validate_play_version "$VER_TO_INSTALL"
+  validate_play_version ${VER_TO_INSTALL}
 
   echo "-----> Installing Play! $VER_TO_INSTALL....."
 
-  status=$(curl --retry 3 --silent --head -L -w "%{http_code}" -o /dev/null "$PLAY_URL")
-
+  status=$(curl --retry 3 --silent --head -w %{http_code} -L ${PLAY_URL} -o /dev/null)
   if [ "$status" != "200" ]; then
-    download_play_official "$VER_TO_INSTALL" "$PLAY_TAR_FILE"
+    download_play_official ${VER_TO_INSTALL} ${PLAY_TAR_FILE}
   else
-    curl --retry 3 -s --max-time 150 -L "$PLAY_URL" -o "$PLAY_TAR_FILE"
+    curl --retry 3 -s --max-time 150 -L $PLAY_URL -o $PLAY_TAR_FILE
   fi
 
-  if [ ! -f "$PLAY_TAR_FILE" ]; then
+  if [ ! -f $PLAY_TAR_FILE ]; then
     echo "-----> Error downloading Play! framework. Please try again..."
     exit 1
   fi
-
-  if ! file "$PLAY_TAR_FILE" | grep -q gzip; then
+  if [ -z "`file $PLAY_TAR_FILE | grep gzip`" ]; then
     error "Failed to install Play! framework or unsupported Play! framework version specified.
 Please review Dev Center for a list of supported versions."
     exit 1
   fi
-
-  tar xzmf "$PLAY_TAR_FILE"
-  rm "$PLAY_TAR_FILE"
-  chmod +x "$PLAY_PATH/play"
+  tar xzmf $PLAY_TAR_FILE
+  rm $PLAY_TAR_FILE
+  chmod +x $PLAY_PATH/play
   echo "Done installing Play!" | indent
 }
-
 
 
 remove_play() {
