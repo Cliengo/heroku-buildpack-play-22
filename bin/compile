@@ -76,13 +76,13 @@ fi
 
 # Install or update Play framework
 if [ ! -f "$PLAY_PATH/play" ]; then
-  download_play_official "$PLAY_VERSION" "$PLAY_PATH"
+  install_play "$PLAY_VERSION" "$PLAY_PATH"
 else
   INSTALLED_PLAY_VERSION=$(cat "$PLAY_PATH/framework/src/play/version")
   if [ "$INSTALLED_PLAY_VERSION" != "$PLAY_VERSION" ] && $VERSION_DECLARED; then
     echo "-----> Updating Play! from $INSTALLED_PLAY_VERSION to $PLAY_VERSION..."
     rm -rf "$PLAY_PATH"
-    download_play_official "$PLAY_VERSION" "$PLAY_PATH"
+    install_play "$PLAY_VERSION" "$PLAY_PATH"
   fi
 fi
 
