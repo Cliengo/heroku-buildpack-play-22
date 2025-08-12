@@ -18,7 +18,7 @@ if [ ! -d "$BUILD_DIR/$PYTHON2_DIR" ]; then
   echo "-----> Downloading and compiling Python ${PYTHON2_VERSION}..."
   curl -L -o python2.tgz "https://www.python.org/ftp/python/${PYTHON2_VERSION}/Python-${PYTHON2_VERSION}.tgz"
 
-  tar -xzf python2.tgz -C "$BUILD_DIR"
+  tar -xzf python2.tgz
   rm python2.tgz
 
   cd "$BUILD_DIR/$PYTHON2_BUILD_DIR"
@@ -34,7 +34,6 @@ if [ ! -d "$BUILD_DIR/$PYTHON2_DIR" ]; then
 else
   echo "-----> Python ${PYTHON2_VERSION} already installed"
 fi
-
 
 # Export path so python2 is used during build
 export PATH="$BUILD_DIR/$PYTHON2_DIR/bin:$PATH"
