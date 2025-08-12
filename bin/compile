@@ -19,7 +19,6 @@ curl -L -o $PYTHON2_ZIP $PYTHON2_URL
 
 echo "-----> Extracting Python 2.7 zip..."
 unzip -q $PYTHON2_ZIP -d $PYTHON2_DIR
-ln -sf python2 "$PYTHON2_DIR/bin/python"
 
 rm $PYTHON2_ZIP
 
