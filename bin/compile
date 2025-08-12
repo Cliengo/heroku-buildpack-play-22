@@ -52,15 +52,6 @@ export PATH="/app/.python2/bin:\$PATH"
 export LD_LIBRARY_PATH="/app/.python2/lib:\$LD_LIBRARY_PATH"
 EOF
 
-# Crea un wrapper para play que exporta LD_LIBRARY_PATH antes de ejecutarlo
-cat <<EOF > "$BUILD_DIR/.play-wrapper"
-#!/bin/bash
-export LD_LIBRARY_PATH="/app/.python2/lib:\$LD_LIBRARY_PATH"
-/app/.play/play "\$@"
-EOF
-chmod +x "$BUILD_DIR/.play-wrapper"
-
-
 
 export_env_dir "$ENV_DIR"
 
