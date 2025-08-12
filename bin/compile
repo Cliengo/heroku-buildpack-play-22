@@ -11,18 +11,6 @@ BIN_DIR=$(cd "$(dirname "$0")"; pwd)
 # Load common functions
 . "$BIN_DIR/common.sh"
 
-
-# --- Install portable Python 2 ---
-PYTHON2_URL="https://github.com/indygreg/python-build-standalone/releases/download/20221002/cpython-2.7.18+20221002-x86_64-unknown-linux-gnu-install_only.tar.gz"
-PYTHON2_DIR="$BUILD_DIR/.python2"
-
-echo "-----> Installing portable Python 2.7 ..."
-mkdir -p $PYTHON2_DIR
-curl -sL $PYTHON2_URL | tar -xz --strip-components=1 -C $PYTHON2_DIR
-
-# Export path to use python2 in the build process
-export PATH="$PYTHON2_DIR/bin:$PATH"
-
 export_env_dir "$ENV_DIR"
 
 # JVM common buildpack setup
@@ -130,7 +118,3 @@ if [ ! -f Procfile ]; then
   echo "-----> No Procfile found. Default process: "
   echo "       play run --http.port=\$PORT \$PLAY_OPTS"
 fi
-
-PROFILE_PATH="$BUILD_DIR/.profile.d/python2.sh"
-mkdir -p $(dirname $PROFILE_PATH)
-echo 'export PATH="/app/.python2/bin:$PATH"' > $PROFILE_PATH
