@@ -1,128 +1,143 @@
 #!/usr/bin/env bash
-set -ex  # <-- Habilita debug + salir en error
-
 # bin/compile <build-dir> <cache-dir> <env-dir>
 
-# Parse args
-PLAY_URL=https://repo1.maven.org/maven2/com/google/code/maven-play-plugin/org/playframework/play/1.4.5/play-1.4.5-framework.zip
+set -e
+
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
+BIN_DIR=$(cd "$(dirname "$0")"; pwd)
 
-BIN_DIR=$(cd $(dirname $0); pwd) # absolute path
-echo "BIN_DIR is $BIN_DIR"
+# Load common functions
+. "$BIN_DIR/common.sh"
 
-# source in common functions
-. $BIN_DIR/common.sh
 
-export_env_dir $ENV_DIR
+# --- Install portable Python 2 ---
+PYTHON2_URL="https://github.com/sganis/pyportable/releases/download/v2.7.10rc1/pyportable-2.7.10rc1.zip"
+PYTHON2_ZIP="pyportable.zip"
+PYTHON2_DIR=".python2"
 
+echo "-----> Downloading portable Python 2.7..."
+curl -L -o $PYTHON2_ZIP $PYTHON2_URL
+
+echo "-----> Extracting Python 2.7 zip..."
+unzip -q $PYTHON2_ZIP -d $PYTHON2_DIR
+
+rm $PYTHON2_ZIP
+
+echo "-----> Portable Python 2.7 installed at $PYTHON2_DIR"
+
+# Export path to use python2 in the build process
+export PATH="$PYTHON2_DIR/bin:$PATH"
+
+export_env_dir "$ENV_DIR"
+
+# JVM common buildpack setup
 JVM_COMMON_BUILDPACK=${JVM_COMMON_BUILDPACK:-"https://buildpack-registry.s3.amazonaws.com/buildpacks/heroku/jvm.tgz"}
 mkdir -p /tmp/jvm-common
-echo "Downloading JVM common buildpack..."
-curl --silent --location $JVM_COMMON_BUILDPACK | tar xzm -C /tmp/jvm-common --strip-components=1
+curl --silent --location "$JVM_COMMON_BUILDPACK" | tar xzm -C /tmp/jvm-common --strip-components=1
 . /tmp/jvm-common/bin/util
 . /tmp/jvm-common/bin/java
 
-#create the cache dir if it doesn't exist
-mkdir -p $CACHE_DIR
+# Ensure cache directory exists
+mkdir -p "$CACHE_DIR"
 
-# create default system.properties
-if [ ! -f ${BUILD_DIR}/system.properties ]; then
-  echo "java.runtime.version=1.6" > ${BUILD_DIR}/system.properties
+# Default system.properties
+if [ ! -f "$BUILD_DIR/system.properties" ]; then
+  echo "java.runtime.version=1.8" > "$BUILD_DIR/system.properties"
 fi
 
-echo "Detecting Java version..."
-javaVersion=$(detect_java_version ${BUILD_DIR})
-echo "Java version detected: $javaVersion"
+# Install JDK using jvm-common
+echo "-----> Installing OpenJDK..."
+install_openjdk "$BUILD_DIR" "$BIN_DIR"
+echo "       Done installing OpenJDK"
 
-echo -n "-----> Installing OpenJDK ${javaVersion}..."
-install_openjdk "${BUILD_DIR}" "${BUILDPACK_DIR}"
-#jdk_overlay ${BUILD_DIR}
-echo " done"
-
+# Setup Play and Ivy paths
 PLAY_PATH=".play"
 IVY_PATH=".ivy2"
 
-# Change dir to handle relative paths
-cd $BUILD_DIR
+cd "$BUILD_DIR"
 
-echo "Unpacking cache directories..."
-for DIR in $PLAY_PATH $IVY_PATH ; do
-  rm -rf $DIR
-  if [ -d $CACHE_DIR/$DIR ]; then
-    echo "Restoring $DIR from cache"
-    cp -r $CACHE_DIR/$DIR $DIR
-  else
-    echo "No cached directory $DIR"
+# Restore Play and Ivy cache
+for DIR in "$PLAY_PATH" "$IVY_PATH"; do
+  rm -rf "$DIR"
+  if [ -d "$CACHE_DIR/$DIR" ]; then
+    cp -r "$CACHE_DIR/$DIR" "$DIR"
   fi
 done
 
-# Install the custom Ivy settings
-if [ -d ${IVY_PATH}-overlay ]; then
-  echo -n "-----> Installing custom Ivy files..."
-  mkdir -p ${IVY_PATH}
-  mv ${IVY_PATH}-overlay/* ${IVY_PATH}
-  echo " done"
+# Install custom Ivy settings if present
+if [ -d "${IVY_PATH}-overlay" ]; then
+  echo "-----> Installing custom Ivy files..."
+  mkdir -p "$IVY_PATH"
+  mv ${IVY_PATH}-overlay/* "$IVY_PATH"
 fi
 
+# Determine Play version
 PLAY_VERSION=$(get_play_version conf/dependencies.yml)
 DEFAULT_PLAY_VERSION="1.3.1"
 VERSION_DECLARED=true
 
-if [ -z "$PLAY_VERSION" ] ; then
-  PLAY_VERSION=$DEFAULT_PLAY_VERSION
+if [ -z "$PLAY_VERSION" ]; then
+  PLAY_VERSION="$DEFAULT_PLAY_VERSION"
   VERSION_DECLARED=false
-  echo "-----> WARNING: Play! version not specified in dependencies.yml. Default version: $PLAY_VERSION being used...."
+  echo "-----> WARNING: Play! version not specified in dependencies.yml. Using default: $PLAY_VERSION"
 fi
 
-# Install Play! or update the version
-if [ ! -f $PLAY_PATH/play ]; then
-  echo "Play framework not found. Installing version $PLAY_VERSION"
-  install_play $PLAY_VERSION
+# Install or update Play
+if [ ! -f "$PLAY_PATH/play" ]; then
+  install_play "$PLAY_VERSION"
 else
-  INSTALLED_PLAY_VERSION=$(cat $PLAY_PATH/framework/src/play/version)
-  echo "Installed Play version: $INSTALLED_PLAY_VERSION, Desired version: $PLAY_VERSION"
-  if [ "$INSTALLED_PLAY_VERSION" != "$PLAY_VERSION" ] && $VERSION_DECLARED ; then
-    echo "-----> Updating Play! version. Previous version was $INSTALLED_PLAY_VERSION. Updating to $PLAY_VERSION..."
-    rm -rf $PLAY_PATH
-    install_play $PLAY_VERSION
+  INSTALLED_PLAY_VERSION=$(cat "$PLAY_PATH/framework/src/play/version")
+  if [ "$INSTALLED_PLAY_VERSION" != "$PLAY_VERSION" ] && $VERSION_DECLARED; then
+    echo "-----> Updating Play! from $INSTALLED_PLAY_VERSION to $PLAY_VERSION..."
+    rm -rf "$PLAY_PATH"
+    install_play "$PLAY_VERSION"
   fi
 fi
 
-# Build app
+# Show version
 echo "-----> Building Play! application..."
-$PLAY_PATH/play version | sed -u 's/^/       /'
+"$PLAY_PATH/play" version | sed -u 's/^/       /'
 
-APP_DIR=./
-echo "       Building Play! application at directory $APP_DIR"
+APP_DIR="."
+echo "       Building app at $APP_DIR"
 
+# Resolve dependencies
 DEPENDENCIES_CMD="$PLAY_PATH/play dependencies $APP_DIR --forProd --forceCopy --silent -Duser.home=$BUILD_DIR 2>&1"
-echo "       Resolving dependencies: $DEPENDENCIES_CMD"
+echo "       Resolving dependencies..."
 eval "$DEPENDENCIES_CMD" | sed -u 's/^/       /'
 check_compile_status
 
+# Precompile app
 PRECOMPILE_CMD="$PLAY_PATH/play precompile $APP_DIR --silent 2>&1"
-echo "       Precompiling: $PRECOMPILE_CMD"
+echo "       Precompiling application..."
 eval "$PRECOMPILE_CMD" | sed -u 's/^/       /'
 check_compile_status
 
-echo "Caching Play! framework and Ivy dirs..."
-mkdir -p $CACHE_DIR
-for DIR in $PLAY_PATH $IVY_PATH ; do
-  rm -rf $CACHE_DIR/$DIR
-  cp -r $DIR $CACHE_DIR/$DIR
+# Save cache
+for DIR in "$PLAY_PATH" "$IVY_PATH"; do
+  rm -rf "$CACHE_DIR/$DIR"
+  cp -r "$DIR" "$CACHE_DIR/$DIR"
 done
 
+# Setup .profile.d to set PATH at runtime
 PROFILE_PATH="$BUILD_DIR/.profile.d/play.sh"
-mkdir -p $(dirname $PROFILE_PATH)
-echo 'export PATH="/app/.play:/app/.jdk/bin:/app/.tools:$PATH"' >> $PROFILE_PATH
+mkdir -p "$(dirname "$PROFILE_PATH")"
+cat <<EOF > "$PROFILE_PATH"
+export PATH="/app/.play:/app/.jdk/bin:/app/.tools:\$PATH"
+EOF
 
-echo "Removing build time dependencies from slug..."
-rm -fr $IVY_PATH
-remove_play $BUILD_DIR $PLAY_VERSION
+# Clean up build-time dependencies
+rm -rf "$IVY_PATH"
+remove_play "$BUILD_DIR" "$PLAY_VERSION"
 
+# Warn if no Procfile
 if [ ! -f Procfile ]; then
-  echo "-----> No Procfile found. Will use the following default process: "
+  echo "-----> No Procfile found. Default process: "
   echo "       play run --http.port=\$PORT \$PLAY_OPTS"
 fi
+
+PROFILE_PATH="$BUILD_DIR/.profile.d/python2.sh"
+mkdir -p $(dirname $PROFILE_PATH)
+echo 'export PATH="/app/.python2/bin:$PATH"' > $PROFILE_PATH
