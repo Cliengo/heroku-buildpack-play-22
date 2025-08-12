@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -ex
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+set -e
 
 BUILD_DIR=$1
 CACHE_DIR=$2
@@ -8,6 +10,7 @@ BIN_DIR=$(cd "$(dirname "$0")"; pwd)
 
 # Load common functions
 . "$BIN_DIR/common.sh"
+
 
 # --- Install portable Python 2 ---
 PYTHON2_URL="https://github.com/sganis/pyportable/releases/download/v2.7.10rc1/pyportable-2.7.10rc1.zip"
@@ -24,34 +27,41 @@ rm $PYTHON2_ZIP
 
 echo "-----> Portable Python 2.7 installed at $PYTHON2_DIR"
 
-# Export path so python2 is used during build
+# Export path to use python2 in the build process
 export PATH="$PYTHON2_DIR/bin:$PATH"
 
 export_env_dir "$ENV_DIR"
 
-# Ensure cache dir exists
+# JVM common buildpack setup
+JVM_COMMON_BUILDPACK=${JVM_COMMON_BUILDPACK:-"https://buildpack-registry.s3.amazonaws.com/buildpacks/heroku/jvm.tgz"}
+mkdir -p /tmp/jvm-common
+curl --silent --location "$JVM_COMMON_BUILDPACK" | tar xzm -C /tmp/jvm-common --strip-components=1
+. /tmp/jvm-common/bin/util
+. /tmp/jvm-common/bin/java
+
+# Ensure cache directory exists
 mkdir -p "$CACHE_DIR"
 
-# Default system.properties (Java 1.8)
+# Default system.properties
 if [ ! -f "$BUILD_DIR/system.properties" ]; then
   echo "java.runtime.version=1.8" > "$BUILD_DIR/system.properties"
 fi
 
+# Install JDK using jvm-common
 echo "-----> Installing OpenJDK..."
-javaVersion=$(detect_java_version)
-install_openjdk "$javaVersion" "$BUILD_DIR" "$BIN_DIR"
+install_openjdk "$BUILD_DIR" "$BIN_DIR"
 echo "       Done installing OpenJDK"
 
+# Setup Play and Ivy paths
 PLAY_PATH=".play"
 IVY_PATH=".ivy2"
 
 cd "$BUILD_DIR"
 
-# Restore cache for Play and Ivy dirs
+# Restore Play and Ivy cache
 for DIR in "$PLAY_PATH" "$IVY_PATH"; do
   rm -rf "$DIR"
   if [ -d "$CACHE_DIR/$DIR" ]; then
-    echo "Restoring cache for $DIR"
     cp -r "$CACHE_DIR/$DIR" "$DIR"
   fi
 done
@@ -60,7 +70,7 @@ done
 if [ -d "${IVY_PATH}-overlay" ]; then
   echo "-----> Installing custom Ivy files..."
   mkdir -p "$IVY_PATH"
-  mv "${IVY_PATH}-overlay"/* "$IVY_PATH"
+  mv ${IVY_PATH}-overlay/* "$IVY_PATH"
 fi
 
 # Determine Play version
@@ -74,29 +84,32 @@ if [ -z "$PLAY_VERSION" ]; then
   echo "-----> WARNING: Play! version not specified in dependencies.yml. Using default: $PLAY_VERSION"
 fi
 
-# Install or update Play framework
+# Install or update Play
 if [ ! -f "$PLAY_PATH/play" ]; then
-  install_play "$PLAY_VERSION" "$PLAY_PATH"
+  install_play "$PLAY_VERSION"
 else
   INSTALLED_PLAY_VERSION=$(cat "$PLAY_PATH/framework/src/play/version")
   if [ "$INSTALLED_PLAY_VERSION" != "$PLAY_VERSION" ] && $VERSION_DECLARED; then
     echo "-----> Updating Play! from $INSTALLED_PLAY_VERSION to $PLAY_VERSION..."
     rm -rf "$PLAY_PATH"
-    install_play "$PLAY_VERSION" "$PLAY_PATH"
+    install_play "$PLAY_VERSION"
   fi
 fi
 
+# Show version
 echo "-----> Building Play! application..."
 "$PLAY_PATH/play" version | sed -u 's/^/       /'
 
 APP_DIR="."
 echo "       Building app at $APP_DIR"
 
+# Resolve dependencies
 DEPENDENCIES_CMD="$PLAY_PATH/play dependencies $APP_DIR --forProd --forceCopy --silent -Duser.home=$BUILD_DIR 2>&1"
 echo "       Resolving dependencies..."
 eval "$DEPENDENCIES_CMD" | sed -u 's/^/       /'
 check_compile_status
 
+# Precompile app
 PRECOMPILE_CMD="$PLAY_PATH/play precompile $APP_DIR --silent 2>&1"
 echo "       Precompiling application..."
 eval "$PRECOMPILE_CMD" | sed -u 's/^/       /'
@@ -115,12 +128,7 @@ cat <<EOF > "$PROFILE_PATH"
 export PATH="/app/.play:/app/.jdk/bin:/app/.tools:\$PATH"
 EOF
 
-# Setup Python2 path in runtime profile
-PY2_PROFILE="$BUILD_DIR/.profile.d/python2.sh"
-mkdir -p "$(dirname "$PY2_PROFILE")"
-echo 'export PATH="/app/.python2/bin:$PATH"' > "$PY2_PROFILE"
-
-# Clean build-time dependencies
+# Clean up build-time dependencies
 rm -rf "$IVY_PATH"
 remove_play "$BUILD_DIR" "$PLAY_VERSION"
 
@@ -129,3 +137,7 @@ if [ ! -f Procfile ]; then
   echo "-----> No Procfile found. Default process: "
   echo "       play run --http.port=\$PORT \$PLAY_OPTS"
 fi
+
+PROFILE_PATH="$BUILD_DIR/.profile.d/python2.sh"
+mkdir -p $(dirname $PROFILE_PATH)
+echo 'export PATH="/app/.python2/bin:$PATH"' > $PROFILE_PATH
