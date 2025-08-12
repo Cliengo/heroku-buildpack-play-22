@@ -58,7 +58,7 @@ download_play_official() {
     exit 1
   fi
   
-  unzip "play-1.4.5.zip" -d ${playUnzipDir} > /dev/null 2>&1
+  unzip "plan-1.4.5.zip" -d ${playUnzipDir} > /dev/null 2>&1
 
   PLAY_BUILD_DIR=$(find -name 'framework' -type d | sed 's/framework//')
 
