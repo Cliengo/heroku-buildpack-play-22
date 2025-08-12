@@ -171,3 +171,41 @@ remove_play() {
   rm -rf "${build_dir}/tmp-play-unzipped"
   rm -f "${build_dir}/play-${play_version}.zip"
 }
+
+install_play() {
+  local version=$1
+  local tarFile="play-heroku.tar.gz"
+  local url="https://s3.amazonaws.com/heroku-jvm-langpack-play/play-heroku-$version.tar.gz"
+
+  validate_play_version "$version"
+
+  echo "-----> Installing Play! $version..."
+
+  if curl --retry 3 --silent --head -w %{http_code} -L "$url" -o /dev/null | grep -q 200; then
+    curl --retry 3 -s --max-time 150 -L "$url" -o "$tarFile"
+  else
+    download_play_official "$version" "$tarFile"
+  fi
+
+  if [ ! -f "$tarFile" ]; then
+    echo "-----> Error downloading Play! framework."
+    exit 1
+  fi
+
+  if ! file "$tarFile" | grep -q gzip; then
+    echo "Invalid Play! archive downloaded. Exiting."
+    exit 1
+  fi
+
+  tar xzmf "$tarFile"
+  rm "$tarFile"
+  chmod +x "$PLAY_PATH/play"
+  echo "Done installing Play!"
+}
+
+remove_play() {
+  local buildDir=${1}
+  local playVersion=${2}
+  rm -rf "${buildDir}/tmp-play-unzipped"
+  rm -f "${buildDir}/play-${playVersion}.zip"
+}
