@@ -52,12 +52,12 @@ download_play_official() {
   mkdir -p ${playUnzipDir}
   
   echo "Zip file: $playZipFile"
-  if [ ! -f "play-1.4.5.zip" ]; then
+  if [ ! -f "$playZipFile" ]; then
     echo "Error: Zip file not found."
     exit 1
   fi
   
-  unzip "play-1.4.5.zip" -d ${playUnzipDir} > /dev/null 2>&1
+  unzip "$playZipFile" -d ${playUnzipDir} > /dev/null 2>&1
 
   PLAY_BUILD_DIR=$(find ${playUnzipDir} -name 'framework' -type d | sed 's/framework//')
 
