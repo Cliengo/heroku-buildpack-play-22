@@ -32,61 +32,43 @@ check_compile_status() {
 download_play_official() {
   local playVersion=${1}
   local playTarFile=${2}
-  local playZipFile="play-${playVersion}.zip"  
+  local playZipFile="play-${playVersion}.zip"
   local playUrl="https://downloads.typesafe.com/play/${playVersion}/${playZipFile}"
 
   if [[ "$playVersion" == "1.4.5" ]]; then
     playUrl="https://github.com/Cliengo/heroku-buildpack-play/releases/download/v26/play-1.4.5.zip"
-  fi
-  
-  if [[ "$playVersion" > "1.6.0" ]]; then
+  elif [[ "$playVersion" > "1.6.0" ]]; then
     playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
   fi
 
-  status=$(curl --retry 3 --silent --head -w %{http_code} -L ${playUrl} -o /dev/null)
+  status=$(curl --retry 3 --silent --head -w %{http_code} -L "$playUrl" -o /dev/null)
   if [ "$status" != "200" ]; then
-    error "Could not locate: ${playUrl}
-Please check that the version ${playVersion} is correct in your conf/dependencies.yml"
+    echo "Could not locate: ${playUrl}"
+    echo "Please check that the version ${playVersion} is correct in your conf/dependencies.yml"
     exit 1
-  else
-    echo "Downloading ${playZipFile} from ${playUrl}" | indent
-    curl --retry 3 -s -O -L ${playUrl}
   fi
 
-  # create tar file
-  echo "Preparing binary package..." | indent
-  local playUnzipDir="tmp-play-unzipped/"
-  mkdir -p ${playUnzipDir}
-  unzip ${playZipFile} -d ${playUnzipDir} > /dev/null 2>&1
+  echo "Downloading ${playZipFile} from ${playUrl}"
+  curl --retry 3 -s -O -L "$playUrl"
 
-  PLAY_BUILD_DIR=$(find -name 'framework' -type d | sed 's/framework//')
+  # create tar file
+  echo "Preparing binary package..."
+  local playUnzipDir="tmp-play-unzipped/"
+  mkdir -p "$playUnzipDir"
+  unzip "$playZipFile" -d "$playUnzipDir" > /dev/null 2>&1
+
+  PLAY_BUILD_DIR=$(find "$playUnzipDir" -name 'framework' -type d | sed 's/framework//')
 
   mkdir -p tmp/.play/framework/src/play
 
-  # Add Play! framework
-  cp -r $PLAY_BUILD_DIR/framework/dependencies.yml tmp/.play/framework
-  cp -r $PLAY_BUILD_DIR/framework/lib/             tmp/.play/framework
-  cp -r $PLAY_BUILD_DIR/framework/play-*.jar       tmp/.play/framework
-  cp -r $PLAY_BUILD_DIR/framework/pym/             tmp/.play/framework
-  cp -r $PLAY_BUILD_DIR/framework/src/play/version tmp/.play/framework/src/play
-  cp -r $PLAY_BUILD_DIR/framework/templates/       tmp/.play/framework
+  cp -r "$PLAY_BUILD_DIR/framework/"* tmp/.play/framework
+  cp -r "$PLAY_BUILD_DIR/modules" tmp/.play
+  cp -r "$PLAY_BUILD_DIR/play" tmp/.play
+  cp -r "$PLAY_BUILD_DIR/resources" tmp/.play
 
-  # Add Play! core modules
-  cp -r $PLAY_BUILD_DIR/modules    tmp/.play
-
-  # Add Play! Linux executable
-  cp -r $PLAY_BUILD_DIR/play  tmp/.play
-
-  # Add Resources
-  cp -r $PLAY_BUILD_DIR/resources tmp/.play
-
-  # Run tar and remove tmp space
-  if [ ! -d build ]; then
-    mkdir build
-  fi
-
-  tar cvzf ${playTarFile} -C tmp/ .play > /dev/null 2>&1
-  rm -fr tmp/
+  mkdir -p build
+  tar czf "$playTarFile" -C tmp/ .play > /dev/null 2>&1
+  rm -rf tmp/
 }
 
 validate_play_version() {
