@@ -38,11 +38,11 @@ download_play_official() {
   local playVersion=${1}
   local playTarFile=${2}
   local playZipFile="play-${playVersion}.zip"
-  local playUrl="https://repo1.maven.org/maven2/com/google/code/maven-play-plugin/org/playframework/play/1.4.5/play-1.4.5-framework.zip"
+  local playUrl="https://repo1.maven.org/maven2/com/google/code/maven-play-plugin/org/playframework/play/${playVersion}/play-${playVersion}-framework.zip"
   # local playUrl="https://downloads.typesafe.com/play/${playVersion}/${playZipFile}"
   
   if [[ "$playVersion" > "1.6.0" ]]; then
-    playUrl="https://repo1.maven.org/maven2/com/google/code/maven-play-plugin/org/playframework/play/1.4.5/play-1.4.5-framework.zip"
+    playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
   fi
 
   status=$(curl --retry 3 --silent --head -w %{http_code} -L ${playUrl} -o /dev/null)
