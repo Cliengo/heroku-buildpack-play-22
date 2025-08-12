@@ -41,7 +41,8 @@ download_play_official() {
   local playUrl="https://downloads.typesafe.com/play/${playVersion}/${playZipFile}"
 
   if [[ "$playVersion" == "1.4.5" ]]; then
-    playUrl="https://github.com/Cliengo/heroku-buildpack-play/releases/download/v26/play-1.4.5.zip"
+    playUrl="https://repo1.maven.org/maven2/com/google/code/maven-play-plugin/org/playframework/play/1.4.5/play-1.4.5-framework.zip"
+    playZipFile="play-1.4.5-framework.zip"
   fi
   
   if [[ "$playVersion" > "1.6.0" ]]; then
