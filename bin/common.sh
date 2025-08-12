@@ -45,7 +45,7 @@ download_play_official() {
     playUrl="https://github.com/playframework/play1/releases/download/${playVersion}/${playZipFile}"
   fi
 
-  curl --retry 3 -s -O -L ${playUrl}
+  curl --retry 3 -s -o -L ${playUrl}
 
   echo "Preparing binary package..." 
   local playUnzipDir="tmp-play-unzipped/"
