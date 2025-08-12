@@ -163,38 +163,24 @@ install_openjdk() {
   echo "OpenJDK installed to $JDK_DIR"
 }
 
-install_play()
-{
-  VER_TO_INSTALL=$1
-  PLAY_URL="https://s3.amazonaws.com/heroku-jvm-langpack-play/play-heroku-$VER_TO_INSTALL.tar.gz"
-  PLAY_TAR_FILE="play-heroku.tar.gz"
+install_play() {
+  local version=$1
+  local play_path=${2:-".play"}
 
-  validate_play_version ${VER_TO_INSTALL}
+  echo "Installing Play! framework version $version..."
 
-  echo "-----> Installing Play! $VER_TO_INSTALL....."
+  mkdir -p "$play_path"
 
-  status=$(curl --retry 3 --silent --head -w %{http_code} -L ${PLAY_URL} -o /dev/null)
-  if [ "$status" != "200" ]; then
-    download_play_official ${VER_TO_INSTALL} ${PLAY_TAR_FILE}
-  else
-    curl --retry 3 -s --max-time 150 -L $PLAY_URL -o $PLAY_TAR_FILE
-  fi
+  PLAY_ZIP_URL="https://repo1.maven.org/maven2/com/google/code/maven-play-plugin/org/playframework/play/$version/play-$version-framework.zip"
+  PLAY_ZIP="$play_path/play-$version.zip"
 
-  if [ ! -f $PLAY_TAR_FILE ]; then
-    echo "-----> Error downloading Play! framework. Please try again..."
-    exit 1
-  fi
-  if [ -z "`file $PLAY_TAR_FILE | grep gzip`" ]; then
-    error "Failed to install Play! framework or unsupported Play! framework version specified.
-Please review Dev Center for a list of supported versions."
-    exit 1
-  fi
-  tar xzmf $PLAY_TAR_FILE
-  rm $PLAY_TAR_FILE
-  chmod +x $PLAY_PATH/play
-  echo "Done installing Play!" | indent
+  curl -sL "$PLAY_ZIP_URL" -o "$PLAY_ZIP"
+  unzip -q "$PLAY_ZIP" -d "$play_path"
+  rm "$PLAY_ZIP"
+
+  echo "$version" > "$play_path/framework/src/play/version"
+  chmod +x "$play_path/play"
 }
-
 
 remove_play() {
   local build_dir=$1
